@@ -1,18 +1,21 @@
 # Finance Automation Agent
 
-A simple automation script that uses Playwright to open a browser and navigate to financial websites. This is the first step toward automating manual finance tasks like downloading statements and organizing them.
+A simple automation script that uses Playwright to launch Chrome with your local profile and navigate to Google Drive. This allows you to work with your financial data while maintaining security and control.
 
 ## Features
 
-- Launch a Chromium browser instance using Playwright
-- Navigate to a specified URL
-- Configurable headless mode
-- Error handling and logging
+- Launch Chrome using your local user profile
+- Automatically navigate to Google Drive
+- Manual spreadsheet creation and management
+- Secure handling of credentials (using your existing Chrome profile)
+- Maximized browser window for better visibility
 
 ## Prerequisites
 
 - Node.js (v14 or higher)
 - npm
+- Google Chrome installed
+- Google account with Drive access
 
 ## Installation
 
@@ -21,10 +24,10 @@ A simple automation script that uses Playwright to open a browser and navigate t
    ```bash
    npm install
    ```
-3. Create a `.env` file in the root directory with the following variables:
+3. Create a `.env` file in the root directory with the following variables (optional):
    ```
-   TARGET_URL=https://www.capitalone.com
-   HEADLESS=true
+   CHROME_PROFILE_PATH=/path/to/your/chrome/profile
+   CHROME_EXECUTABLE_PATH=/path/to/chrome/executable
    ```
 
 ## Usage
@@ -40,10 +43,27 @@ npm run build
 npm start
 ```
 
+## How it Works
+
+1. The script launches Chrome using your local profile (staying logged into your accounts)
+2. Automatically navigates to Google Drive
+3. Provides instructions for manual steps:
+   - Navigate to your financial folder
+   - Create a new Google Sheet
+   - Name your spreadsheet appropriately
+4. Keeps the browser open until you manually close it (Ctrl+C in terminal)
+
 ## Configuration
 
-- `TARGET_URL`: The URL to navigate to (default: https://www.capitalone.com)
-- `HEADLESS`: Set to 'true' to run in headless mode, 'false' to show the browser UI
+- `CHROME_PROFILE_PATH`: Path to your Chrome profile directory (defaults to standard location)
+- `CHROME_EXECUTABLE_PATH`: Path to Chrome executable (defaults to standard location)
+
+## Security Note
+
+This script uses your local Chrome profile, which means:
+- Your existing login sessions are preserved
+- No credentials are stored in the script
+- All sensitive operations are performed manually in your secure browser context
 
 ## License
 
