@@ -2,6 +2,197 @@ import pandas as pd
 import os
 from datetime import datetime
 from config.categories import CATEGORY_RULES
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from googleapiclient.discovery import build
+import pickle
+
+# If modifying these scopes, delete the file token.pickle.
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+
+def get_google_sheets_service():
+    """Get or create Google Sheets API service."""
+    creds = None
+    # The file token.pickle stores the user's access and refresh tokens
+    if os.path.exists('token.pickle'):
+        with open('token.pickle', 'rb') as token:
+            creds = pickle.load(token)
+    
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+        with open('token.pickle', 'wb') as token:
+            pickle.dump(creds, token)
+
+    return build('sheets', 'v4', credentials=creds)
+
+def create_google_sheet(service, title):
+    """Create a new Google Sheet."""
+    spreadsheet = {
+        'properties': {
+            'title': title
+        }
+    }
+    spreadsheet = service.spreadsheets().create(body=spreadsheet).execute()
+    return spreadsheet['spreadsheetId']
+
+def format_google_sheet(service, spreadsheet_id, df):
+    """Format the Google Sheet with proper structure and styling."""
+    # Prepare the data
+    headers = ['Date', 'Description', 'Category', 'Amount', 'Account', 'Notes']
+    data = [headers] + df[headers].values.tolist()
+    
+    # Clear existing content
+    range_name = 'A1:F1000'  # Adjust range as needed
+    service.spreadsheets().values().clear(
+        spreadsheetId=spreadsheet_id,
+        range=range_name
+    ).execute()
+    
+    # Update values
+    body = {
+        'values': data
+    }
+    service.spreadsheets().values().update(
+        spreadsheetId=spreadsheet_id,
+        range=range_name,
+        valueInputOption='RAW',
+        body=body
+    ).execute()
+    
+    # Format header row
+    requests = [
+        {
+            'repeatCell': {
+                'range': {
+                    'sheetId': 0,
+                    'startRowIndex': 0,
+                    'endRowIndex': 1
+                },
+                'cell': {
+                    'userEnteredFormat': {
+                        'backgroundColor': {
+                            'red': 0.8,
+                            'green': 0.8,
+                            'blue': 0.8
+                        },
+                        'textFormat': {
+                            'bold': True
+                        }
+                    }
+                },
+                'fields': 'userEnteredFormat(backgroundColor,textFormat)'
+            }
+        },
+        {
+            'updateSheetProperties': {
+                'properties': {
+                    'sheetId': 0,
+                    'gridProperties': {
+                        'frozenRowCount': 1
+                    }
+                },
+                'fields': 'gridProperties.frozenRowCount'
+            }
+        },
+        {
+            'updateDimensionProperties': {
+                'range': {
+                    'sheetId': 0,
+                    'dimension': 'COLUMNS',
+                    'startIndex': 0,
+                    'endIndex': 1
+                },
+                'properties': {
+                    'pixelSize': 100
+                },
+                'fields': 'pixelSize'
+            }
+        },
+        {
+            'updateDimensionProperties': {
+                'range': {
+                    'sheetId': 0,
+                    'dimension': 'COLUMNS',
+                    'startIndex': 1,
+                    'endIndex': 2
+                },
+                'properties': {
+                    'pixelSize': 300
+                },
+                'fields': 'pixelSize'
+            }
+        },
+        {
+            'updateDimensionProperties': {
+                'range': {
+                    'sheetId': 0,
+                    'dimension': 'COLUMNS',
+                    'startIndex': 2,
+                    'endIndex': 3
+                },
+                'properties': {
+                    'pixelSize': 150
+                },
+                'fields': 'pixelSize'
+            }
+        },
+        {
+            'updateDimensionProperties': {
+                'range': {
+                    'sheetId': 0,
+                    'dimension': 'COLUMNS',
+                    'startIndex': 3,
+                    'endIndex': 4
+                },
+                'properties': {
+                    'pixelSize': 100
+                },
+                'fields': 'pixelSize'
+            }
+        },
+        {
+            'updateDimensionProperties': {
+                'range': {
+                    'sheetId': 0,
+                    'dimension': 'COLUMNS',
+                    'startIndex': 4,
+                    'endIndex': 5
+                },
+                'properties': {
+                    'pixelSize': 150
+                },
+                'fields': 'pixelSize'
+            }
+        },
+        {
+            'updateDimensionProperties': {
+                'range': {
+                    'sheetId': 0,
+                    'dimension': 'COLUMNS',
+                    'startIndex': 5,
+                    'endIndex': 6
+                },
+                'properties': {
+                    'pixelSize': 200
+                },
+                'fields': 'pixelSize'
+            }
+        }
+    ]
+    
+    # Apply formatting
+    service.spreadsheets().batchUpdate(
+        spreadsheetId=spreadsheet_id,
+        body={'requests': requests}
+    ).execute()
 
 def load_transactions(file_path):
     """Load and parse the CSV file."""
@@ -38,36 +229,6 @@ def categorize_transactions(df):
     
     return df
 
-def create_excel_report(df, output_path):
-    """Create an Excel file with separate sheets for each category."""
-    # Create Excel writer
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    output_file = os.path.join(output_path, f'categorized_finances_{timestamp}.xlsx')
-    
-    with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
-        # Write each category to a separate sheet
-        for category in df['Category'].unique():
-            # Filter transactions for this category
-            category_df = df[df['Category'] == category]
-            
-            # Clean up the sheet name (Excel has a 31 character limit)
-            sheet_name = str(category)[:31]
-            
-            # Write to Excel
-            category_df.to_excel(writer, sheet_name=sheet_name, index=False)
-            
-            # Auto-adjust column widths
-            worksheet = writer.sheets[sheet_name]
-            for idx, col in enumerate(category_df.columns):
-                max_length = max(
-                    category_df[col].astype(str).apply(len).max(),
-                    len(str(col))
-                )
-                worksheet.column_dimensions[chr(65 + idx)].width = min(max_length + 2, 50)
-    
-    print(f"Excel report created: {output_file}")
-    return output_file
-
 def main():
     # Check if input directory exists
     if not os.path.exists('input'):
@@ -75,16 +236,20 @@ def main():
         print("Created 'input' directory. Please place your CSV files there.")
         return
     
-    # Check if output directory exists
-    if not os.path.exists('output'):
-        os.makedirs('output')
-    
     # Get all CSV files from input directory
     csv_files = [f for f in os.listdir('input') if f.endswith('.csv')]
     
     if not csv_files:
         print("No CSV files found in the 'input' directory.")
         print("Please export your transactions as CSV and place them in the 'input' directory.")
+        return
+    
+    # Initialize Google Sheets service
+    try:
+        service = get_google_sheets_service()
+    except Exception as e:
+        print(f"Error initializing Google Sheets service: {e}")
+        print("Please make sure you have set up the Google Sheets API and have credentials.json in the project directory.")
         return
     
     # Process each CSV file
@@ -100,11 +265,16 @@ def main():
         # Categorize transactions
         df = categorize_transactions(df)
         
-        # Create Excel report
-        output_file = create_excel_report(df, 'output')
+        # Create Google Sheet
+        timestamp = datetime.now().strftime('%Y-%m-%d')
+        sheet_title = f'Financial Transactions {timestamp}'
+        spreadsheet_id = create_google_sheet(service, sheet_title)
+        
+        # Format the sheet
+        format_google_sheet(service, spreadsheet_id, df)
         
         print(f"Processing complete for {csv_file}")
-        print(f"Output saved to: {output_file}")
+        print(f"Google Sheet created: https://docs.google.com/spreadsheets/d/{spreadsheet_id}")
 
 if __name__ == "__main__":
     main() 

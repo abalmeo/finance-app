@@ -1,27 +1,40 @@
 # Finance Categorization App
 
-A Python application that automatically categorizes financial transactions from CSV files and organizes them into an Excel workbook with separate sheets for each category.
+A Python application that automatically categorizes financial transactions from CSV files and creates a formatted Google Sheet with the categorized data.
 
 ## Features
 
 - Load and parse CSV transaction files
 - Automatically categorize transactions based on configurable rules
-- Create Excel workbook with separate sheets for each category
+- Create and format Google Sheets with proper structure
 - Easy-to-update categorization rules
-- Offline-first operation (no cloud dependencies)
+- Secure Google Sheets integration
 
 ## Prerequisites
 
 - Python 3.8 or higher
 - pip (Python package installer)
+- Google Cloud Platform account
+- Google Sheets API enabled
 
 ## Installation
 
 1. Clone the repository
-2. Install dependencies:
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
+4. Set up Google Sheets API:
+   - Go to the [Google Cloud Console](https://console.cloud.google.com)
+   - Create a new project
+   - Enable the Google Sheets API
+   - Create OAuth 2.0 credentials
+   - Download the credentials and save as `credentials.json` in the project directory
 
 ## Usage
 
@@ -31,7 +44,8 @@ A Python application that automatically categorizes financial transactions from 
    ```bash
    python categorize.py
    ```
-4. Find the categorized Excel file in the `output` directory
+4. On first run, you'll be prompted to authorize the application
+5. The script will create a new Google Sheet with your categorized transactions
 
 ## Customizing Categories
 
@@ -64,11 +78,18 @@ Example rule:
 finance-categorizer/
 ├── categorize.py          # Main script
 ├── input/                 # Place your CSV files here
-├── output/                # Categorized Excel files will be saved here
 ├── config/
 │   └── categories.py      # Categorization rules
+├── credentials.json       # Google API credentials
+├── token.pickle          # OAuth token (created on first run)
 └── requirements.txt       # Python dependencies
 ```
+
+## Security Note
+
+- Your Google credentials are stored locally in `token.pickle`
+- The script only requests access to Google Sheets
+- No sensitive data is stored in the cloud
 
 ## License
 
