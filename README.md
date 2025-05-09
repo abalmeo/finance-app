@@ -1,69 +1,74 @@
-# Finance Automation Agent
+# Finance Categorization App
 
-A simple automation script that uses Playwright to launch Chrome with your local profile and navigate to Google Drive. This allows you to work with your financial data while maintaining security and control.
+A Python application that automatically categorizes financial transactions from CSV files and organizes them into an Excel workbook with separate sheets for each category.
 
 ## Features
 
-- Launch Chrome using your local user profile
-- Automatically navigate to Google Drive
-- Manual spreadsheet creation and management
-- Secure handling of credentials (using your existing Chrome profile)
-- Maximized browser window for better visibility
+- Load and parse CSV transaction files
+- Automatically categorize transactions based on configurable rules
+- Create Excel workbook with separate sheets for each category
+- Easy-to-update categorization rules
+- Offline-first operation (no cloud dependencies)
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
-- npm
-- Google Chrome installed
-- Google account with Drive access
+- Python 3.8 or higher
+- pip (Python package installer)
 
 ## Installation
 
 1. Clone the repository
 2. Install dependencies:
    ```bash
-   npm install
-   ```
-3. Create a `.env` file in the root directory with the following variables (optional):
-   ```
-   CHROME_PROFILE_PATH=/path/to/your/chrome/profile
-   CHROME_EXECUTABLE_PATH=/path/to/chrome/executable
+   pip install -r requirements.txt
    ```
 
 ## Usage
 
-Development mode:
-```bash
-npm run dev
+1. Export your transactions as CSV from your bank/finance site
+2. Place the CSV file(s) in the `input` directory
+3. Run the script:
+   ```bash
+   python categorize.py
+   ```
+4. Find the categorized Excel file in the `output` directory
+
+## Customizing Categories
+
+Edit the `config/categories.py` file to customize how transactions are categorized. The file includes example rules for common categories like:
+- Groceries
+- Dining
+- Transportation
+- Entertainment
+- Utilities
+- Income
+- Shopping
+
+Each category can have multiple rules, and each rule can be of different types:
+- `contains`: Matches if the column contains the specified value
+- `exact`: Matches if the column exactly equals the specified value
+- `amount_range`: Matches if the amount is within the specified range
+
+Example rule:
+```python
+{
+    'type': 'contains',
+    'column': 'Description',
+    'value': 'WHOLE FOODS'
+}
 ```
 
-Production mode:
-```bash
-npm run build
-npm start
+## Directory Structure
+
 ```
-
-## How it Works
-
-1. The script launches Chrome using your local profile (staying logged into your accounts)
-2. Automatically navigates to Google Drive
-3. Provides instructions for manual steps:
-   - Navigate to your financial folder
-   - Create a new Google Sheet
-   - Name your spreadsheet appropriately
-4. Keeps the browser open until you manually close it (Ctrl+C in terminal)
-
-## Configuration
-
-- `CHROME_PROFILE_PATH`: Path to your Chrome profile directory (defaults to standard location)
-- `CHROME_EXECUTABLE_PATH`: Path to Chrome executable (defaults to standard location)
-
-## Security Note
-
-This script uses your local Chrome profile, which means:
-- Your existing login sessions are preserved
-- No credentials are stored in the script
-- All sensitive operations are performed manually in your secure browser context
+finance-categorizer/
+├── categorize.py          # Main script
+├── input/                 # Place your CSV files here
+├── output/                # Categorized Excel files will be saved here
+├── config/
+│   └── categories.py      # Categorization rules
+└── requirements.txt       # Python dependencies
+```
 
 ## License
 
